@@ -1,0 +1,118 @@
+<div class="dashboard-data">
+    <div class="toolbar">
+        <div class="range-switcher" role="group" aria-label="Measurement interval">
+            {% for key, duration in intervals.items() %}
+            <button
+                class="{{ 'selected' if interval == key else '' }}"
+                hx-get="{{ url_for('dashboard_data', interval=key) }}"
+                hx-target="#dashboard-data"
+                hx-swap="innerHTML"
+                aria-pressed="{{ 'true' if interval == key else 'false' }}"
+            >{{ key }}</button>
+            {% endfor %}
+        </div>
+        <div class="refresh-status">
+            <span id="refresh-indicator" class="htmx-indicator spinner"></span>
+            <span>Updated {{ updated_at }}</span>
+            <span class="live-dot"></span>
+        </div>
+    </div>
+
+    <div class="metric-grid">
+        <article class="metric-card temperature-card">
+            <div class="metric-heading">
+                <span class="metric-icon">°</span>
+                <span>Temperature</span>
+                <span class="metric-tag">AIR</span>
+            </div>
+            <div class="metric-value">{{ "%.1f"|format(latest.temperature) if latest else "—" }}<sup>°C</sup></div>
+            <div class="metric-footer">
+                <span>Average {{ temperature_average }}°</span>
+                <span class="trend neutral">today</span>
+            </div>
+        </article>
+        <article class="metric-card humidity-card">
+            <div class="metric-heading">
+                <span class="metric-icon">◌</span>
+                <span>Humidity</span>
+                <span class="metric-tag">AIR</span>
+            </div>
+            <div class="metric-value">{{ "%.1f"|format(latest.humidity) if latest else "—" }}<sup>%</sup></div>
+            <div class="metric-footer">
+                <span>Average {{ humidity_average }}%</span>
+                <span class="trend cool">today</span>
+            </div>
+        </article>
+        <article class="metric-card reading-card">
+            <div class="metric-heading">
+                <span class="metric-icon">↗</span>
+                <span>Readings</span>
+                <span class="metric-tag">RANGE</span>
+            </div>
+            <div class="metric-value">{{ measurement_count }}<sup> records</sup></div>
+            <div class="metric-footer">
+                <span>Selected interval</span>
+                <span class="trend neutral">{{ interval }}</span>
+            </div>
+        </article>
+    </div>
+
+    <div class="lower-grid">
+        <article class="panel chart-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Live timeline</p>
+                    <h2>Today at a glance</h2>
+                </div>
+                <div class="legend">
+                    <span><i class="legend-temperature"></i>Temperature</span>
+                    <span><i class="legend-humidity"></i>Humidity</span>
+                </div>
+            </div>
+            {% if chart_measurements %}
+            <div class="chart" style="--chart-max: {{ chart_max }}">
+                {% for measurement in chart_measurements %}
+                <div class="chart-column" title="{{ measurement.measured_at.strftime('%H:%M') }} · {{ '%.1f'|format(measurement.temperature) }}°C · {{ '%.1f'|format(measurement.humidity) }}%">
+                    <div class="bar-stack">
+                        <span class="bar humidity-bar" style="height: {{ (measurement.humidity / chart_max * 100)|round(1) }}%"></span>
+                        <span class="bar temperature-bar" style="height: {{ (measurement.temperature / chart_max * 100)|round(1) }}%"></span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="chart-axis"><span>Start</span><span>{{ interval }} window</span><span>Now</span></div>
+            {% else %}
+            <div class="empty-state"><span>○</span><strong>No readings yet today</strong><small>Measurements will appear here as soon as the sensor reports.</small></div>
+            {% endif %}
+        </article>
+
+        <article class="panel range-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Daily range</p>
+                    <h2>Highs & lows</h2>
+                </div>
+                <span class="range-icon">↕</span>
+            </div>
+            <div class="range-list">
+                <div class="range-row">
+                    <span class="range-label"><i class="range-dot temperature-dot"></i>Temperature</span>
+                    <strong>{{ temperature_max }}<small>°C</small></strong>
+                    <span class="range-low">{{ temperature_min }}° low</span>
+                </div>
+                <div class="range-row">
+                    <span class="range-label"><i class="range-dot humidity-dot"></i>Humidity</span>
+                    <strong>{{ humidity_max }}<small>%</small></strong>
+                    <span class="range-low">{{ humidity_min }}% low</span>
+                </div>
+            </div>
+            <div class="last-reading">
+                <span class="last-reading-icon">✓</span>
+                <div><strong>{{ "Sensor is reporting normally" if latest else "Waiting for sensor data" }}</strong><small>{% if latest %}Last reading at {{ latest.measured_at.strftime("%H:%M") }}{% else %}No measurements found for today{% endif %}</small></div>
+            </div>
+        </article>
+    </div>
+</div>
+<script>
+    document.getElementById("today-label").textContent = {{ today|tojson }};
+</script>
