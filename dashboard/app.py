@@ -41,7 +41,7 @@ with app.app_context():
 
 @app.route('/')
 def home():
-    return render_template("pages/home.html", title="Atmos / Daily overview")
+    return render_template("pages/home.html", title="Dashboard")
 
 
 def _dashboard_context(interval: str) -> dict:
