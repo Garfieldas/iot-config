@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+**/__pycache__
+**/*.py[cod]
+**/.venv
+dashboard/.venv
+postgres_data
+mosquitto_data
+mosquitto_logs
+n8n_data
