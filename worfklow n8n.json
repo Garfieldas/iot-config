@@ -1,0 +1,269 @@
+{
+  "name": "Iot project",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mqttTrigger",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        -176
+      ],
+      "id": "81e1e257-dceb-4d93-a95d-8e5804996839",
+      "name": "MQTT Trigger",
+      "credentials": {
+        "mqtt": {
+          "id": "GWvQTgyPMwajK4YR",
+          "name": "MQTT account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "c034862f-14b2-41e9-ae26-88f9b5be7c96",
+              "leftValue": "={{ [6, 12, 18].includes($now.setZone('Europe/Helsinki').hour) && $now.setZone('Europe/Helsinki').minute === 0 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        -496,
+        -272
+      ],
+      "id": "6094fd95-05a1-49f9-adf6-3dc63b7f9aea",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "measurements",
+          "mode": "list",
+          "cachedResultName": "measurements"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "temperature",
+              "displayName": "temperature",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "humidity",
+              "displayName": "humidity",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "measured_at",
+              "displayName": "measured_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.8,
+      "position": [
+        -512,
+        32
+      ],
+      "id": "e13549ca-bdb3-4412-a970-4bb00ea708d4",
+      "name": "Insert rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "Uom0sCBakjJZzjw1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=Current weather in Helsinki:\nTemperature: {{ $('MQTT Trigger').item.json.message.temperature }} °C\nHumidity: {{ $('MQTT Trigger').item.json.message.humidity }} %\n\nGive short clothing recommendations for going outside right now.\nAnswer in 3-5 bullet points, mention layers, shoes and if an umbrella or hat is needed."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -144,
+        -368
+      ],
+      "id": "57fa4c32-e31e-4741-bba0-8f5fe96e6f48",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -96
+      ],
+      "id": "52181b72-8f73-4461-a238-c3dcabb42c8a",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0xfjXGKIlAEM3Onq",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1025910269",
+        "text": "hello",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        -368
+      ],
+      "id": "0289d88b-d4fb-4323-a0c4-09c089512f18",
+      "name": "Send a text message",
+      "webhookId": "7f180494-5ab2-4d0d-839a-55529a4304c3",
+      "credentials": {
+        "telegramApi": {
+          "id": "aH24J8VpY0cAT4m8",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "MQTT Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Helsinki",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "be81c234-e9ee-44d4-85f7-1cc760120495",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dc7b2063ff9d5d625d23027a5934ba3cfaa06517fd221d78a896740521e4bbcc"
+  },
+  "nodeGroups": [],
+  "id": "TQz1m2216QMz2w4C",
+  "tags": []
+}
